@@ -2,39 +2,55 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Family Chat</title>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: sans-serif; margin: 20px; }
-    #log { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-    input, button { padding: 10px; font-size: 16px; }
+    #log { height: 60vh; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    #msg { width: 70%; max-width: 400px; }
+    button { padding: 10px; }
+    .name { font-weight: bold; margin-right: 4px; }
   </style>
 </head>
 <body>
   <h1>Family Chat</h1>
   <div id="log"></div>
-  <input id="msg" autocomplete="off" placeholder="Type a message..." />
+  <input id="msg" placeholder="Type a message…" autocomplete="off" />
   <button onclick="send()">Send</button>
 
-  <script>
-    const ws = new WebSocket(`wss://${location.host}/ws`);
-    const log = document.getElementById("log");
+<script>
+  // ——— Ask (or remember) a username ———
+  let username = localStorage.getItem("fc_name");
+  while (!username) {
+    username = prompt("Enter your name:");
+  }
+  localStorage.setItem("fc_name", username);
 
-    ws.onmessage = (event) => {
-      const message = document.createElement("div");
-      message.textContent = event.data;
-      log.appendChild(message);
-      log.scrollTop = log.scrollHeight;
-    };
+  // ——— WebSocket connection ———
+  const ws = new WebSocket(`wss://${location.host}/ws`);
+  const log = document.getElementById("log");
+  const msgInput = document.getElementById("msg");
 
-    function send() {
-      const input = document.getElementById("msg");
-      if (input.value) {
-        ws.send(input.value);
-        input.value = "";
-      }
-    }
-  </script>
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);           // {username, text}
+    const line = document.createElement("div");
+    line.innerHTML = `<span class="name">${data.username}:</span> ${data.text}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  };
+
+  function send() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+    ws.send(JSON.stringify({ username, text }));
+    msgInput.value = "";
+  }
+
+  // Allow Enter key to send
+  msgInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") send();
+  });
+</script>
 </body>
 </html>
