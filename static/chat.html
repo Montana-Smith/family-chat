@@ -1,0 +1,40 @@
+<!-- static/chat.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Family Chat</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #log { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    input, button { padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Family Chat</h1>
+  <div id="log"></div>
+  <input id="msg" autocomplete="off" placeholder="Type a message..." />
+  <button onclick="send()">Send</button>
+
+  <script>
+    const ws = new WebSocket(`wss://${location.host}/ws`);
+    const log = document.getElementById("log");
+
+    ws.onmessage = (event) => {
+      const message = document.createElement("div");
+      message.textContent = event.data;
+      log.appendChild(message);
+      log.scrollTop = log.scrollHeight;
+    };
+
+    function send() {
+      const input = document.getElementById("msg");
+      if (input.value) {
+        ws.send(input.value);
+        input.value = "";
+      }
+    }
+  </script>
+</body>
+</html>
